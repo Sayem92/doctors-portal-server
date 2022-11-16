@@ -96,6 +96,13 @@ async function run() {
 
         });
 
+        // get all booking user----------
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const bookings = await bookingsCollection.find(query).toArray();
+            res.send(bookings);
+        });
 
         // post bookings-------
         app.post('/bookings', async (req, res) => {
@@ -103,8 +110,8 @@ async function run() {
             // console.log(booking);
             const query = {
                 appointmentDate: booking.appointmentDate,
-                email : booking.email,
-                treatment : booking.treatment
+                email: booking.email,
+                treatment: booking.treatment
 
             }
 
