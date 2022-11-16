@@ -26,7 +26,7 @@ async function run() {
         const appointmentOptionsCollection = client.db("DoctorsPortal").collection("appointmentOptions");
 
         const bookingsCollection = client.db("DoctorsPortal").collection("bookings");
-        
+
 
         // use aggregate to query to multiple collection and then merge data
         app.get('/appointmentOptions', async (req, res) => {
@@ -49,6 +49,53 @@ async function run() {
             res.send(options);
         });
 
+
+        app.get('/v2/appointmentOptions', async (req, res) => {
+            const date = req.query.date;
+            const options = await appointmentOptionsCollection.aggregate([
+                {
+                    $lookup: {
+                        from: 'bookings',
+                        localField: "name",  //main jeta sate melaiba----
+                        foreignField: "treatment",  //jake milaiba----
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ['$appointmentDate', date]
+                                    }
+                                }
+                            }
+                        ], // matching ar jonno------
+                        as: "booked", // output name---
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        slots: 1,
+                        booked: {
+                            $map: {
+                                input: '$booked',
+                                as: 'book',
+                                in: '$$book.slot'
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        slots: {
+                            $setDifference: ['$slots', '$booked']
+                        }
+                    }
+                }
+            ]).toArray();
+            res.send(options);
+
+        });
+        
 
         // post bookings-------
         app.post('/bookings', async (req, res) => {
