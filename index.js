@@ -3,7 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 
 
 const app = express();
@@ -26,6 +26,8 @@ async function run() {
         const appointmentOptionsCollection = client.db("DoctorsPortal").collection("appointmentOptions");
 
         const bookingsCollection = client.db("DoctorsPortal").collection("bookings");
+
+        const usersCollection = client.db("DoctorsPortal").collection("users");
 
 
         // use aggregate to query to multiple collection and then merge data
@@ -126,6 +128,13 @@ async function run() {
             res.send(result);
         });
 
+
+        //post users-----------
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
 
 
 
