@@ -160,15 +160,20 @@ async function run() {
 
             res.status(403).send({ accessToken: 'no token available' })
 
-        })
+        });
 
         //post users-----------
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
             res.send(result);
-        })
+        });
 
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        })
 
 
 
