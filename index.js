@@ -44,6 +44,8 @@ async function run() {
 
         const usersCollection = client.db("DoctorsPortal").collection("users");
 
+        const doctorsCollection = client.db("DoctorsPortal").collection("doctors");
+
 
         // use aggregate to query to multiple collection and then merge data
         app.get('/appointmentOptions', async (req, res) => {
@@ -213,6 +215,13 @@ async function run() {
             res.send(result)
         });
 
+        // add doctors info ---------
+        app.post('/doctors', async(req,res)=>{
+            const doctor = req.body;
+            const result  = await doctorsCollection.insertOne(doctor)
+            res.send(result)
+
+        });
 
 
 
