@@ -113,6 +113,13 @@ async function run() {
 
         });
 
+        //get appointments name by project query--------
+        app.get('/appointmentSpecialty', async (req, res) => {
+            const query = {}
+            const result = await appointmentOptionsCollection.find(query).project({ name: 1 }).toArray();
+            res.send(result);
+        });
+
         // get all booking user----------
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
