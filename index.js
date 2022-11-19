@@ -163,7 +163,7 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
                 return res.send({ accessToken: token })
             }
 
@@ -216,11 +216,18 @@ async function run() {
         });
 
         // add doctors info ---------
-        app.post('/doctors', async(req,res)=>{
+        app.post('/doctors', async (req, res) => {
             const doctor = req.body;
-            const result  = await doctorsCollection.insertOne(doctor)
+            const result = await doctorsCollection.insertOne(doctor)
             res.send(result)
 
+        });
+
+        // get all doctors info ---------
+        app.get('/doctors', async (req, res) => {
+            const query = {}
+            const doctors = await doctorsCollection.find(query).toArray();
+            res.send(doctors);
         });
 
 
