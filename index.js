@@ -3,6 +3,9 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
+//  Stripe ar-------
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const jwt = require('jsonwebtoken')
 
 const app = express();
@@ -149,13 +152,13 @@ async function run() {
             res.send(bookings);
         });
 
-          // get single booking user----------
-          app.get("/bookings/:id",async (req, res) => {
+        // get single booking user----------
+        app.get("/bookings/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id : ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const singleBooking = await bookingsCollection.findOne(query);
             res.send(singleBooking)
-          })
+        })
 
         // post bookings-------
         app.post('/bookings', async (req, res) => {
@@ -192,6 +195,25 @@ async function run() {
             res.status(403).send({ accessToken: 'no token available' })
 
         });
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;  // poysa the charge korbo
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ],
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+              });
+
+        })
 
         //post users-----------
         app.post('/users', async (req, res) => {
