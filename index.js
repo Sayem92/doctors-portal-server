@@ -105,6 +105,7 @@ async function run() {
                     $project: {
                         name: 1,
                         slots: 1,
+                        price: 1,
                         booked: {
                             $map: {
                                 input: '$booked',
@@ -117,6 +118,7 @@ async function run() {
                 {
                     $project: {
                         name: 1,
+                        price: 1,
                         slots: {
                             $setDifference: ['$slots', '$booked']
                         }
@@ -146,6 +148,14 @@ async function run() {
             const bookings = await bookingsCollection.find(query).toArray();
             res.send(bookings);
         });
+
+          // get single booking user----------
+          app.get("/bookings/:id",async (req, res) => {
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)}
+            const singleBooking = await bookingsCollection.findOne(query);
+            res.send(singleBooking)
+          })
 
         // post bookings-------
         app.post('/bookings', async (req, res) => {
@@ -227,7 +237,20 @@ async function run() {
             res.send(result)
         });
 
-        // add doctors info ---------
+        //temporary update a single property of collection-----------
+        // app.get('/addPrice', async (req, res) => {
+        //     const filter = {}
+        //     const options = { upsert: true }
+        //     const updatedDoc = {
+        //         $set: {
+        //             price: 99
+        //         }
+        //     }
+        //     const result = await appointmentOptionsCollection.updateMany(filter, updatedDoc, options);
+        //     res.send(result)
+        // })
+
+
         app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
             const doctor = req.body;
             const result = await doctorsCollection.insertOne(doctor)
