@@ -49,6 +49,8 @@ async function run() {
 
         const doctorsCollection = client.db("DoctorsPortal").collection("doctors");
 
+        const paymentsCollection = client.db("DoctorsPortal").collection("payments");
+
 
         //Node: make sure you use verify admin after verify jwtToken
         const verifyAdmin = async (req, res, next) => {
@@ -211,9 +213,26 @@ async function run() {
 
             res.send({
                 clientSecret: paymentIntent.client_secret,
-              });
+            });
 
-        })
+        });
+
+        // save user payment data ---------
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+
+            const id = payment.bookingId;
+            const filter = {_id : ObjectId(id)}
+            const updatedDoc = {
+                $set:{
+                    paid: true,
+                    transactionId: payment.transactionId,
+                }
+            }
+            const updatedResult = await bookingsCollection.updateOne(filter,updatedDoc)
+            res.send(result)
+        });
 
         //post users-----------
         app.post('/users', async (req, res) => {
