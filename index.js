@@ -1,7 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+// email send ar---------
+const nodemailer = require("nodemailer");
+//nodemailer + mailgun--------
+const mg = require('nodemailer-mailgun-transport');
+
 require('dotenv').config();
+
 
 //  Stripe ar-------
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -20,6 +26,61 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.lhckmem.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
+function sendBookingEmail(booking) {
+    const { email, appointmentDate, treatment, slot } = booking;
+
+    // send nodemail+mailgun----------
+    const auth = {
+        auth: {
+            api_key: process.env.EMAIL_SEND_KEY,
+            domain: process.env.EMAIL_SEND_DOMAIN
+        }
+    }
+
+    const transporter = nodemailer.createTransport(mg(auth));
+
+    //send nodemail di----------------
+
+    // let transporter = nodemailer.createTransport({
+    //     host: 'smtp.sendgrid.net',
+    //     port: 587,
+    //     auth: {
+    //         user: "apikey",
+    //         pass: process.env.SENDGRID_API_KEY
+    //     }
+    // });
+
+
+    console.log('sending email', email);
+    // aita olo mail patani all allow----------
+    transporter.sendMail({
+        from: "sayemmiha123@gmail.com", // verified sender email
+        to: email || "sayemmiha123@gmail.com", // recipient email
+        subject: `Your appointment for ${treatment} is confirmed `, // Subject line
+        text: "Hello world!", // plain text body
+        html: `
+        <h3>Your appointment is confirmed</h3>
+        <div>
+            <p>Your appointment for treatment : ${treatment}</p>
+            <p>Please visit on us ${appointmentDate} at ${slot}</p>
+            <p>Thanks for Doctor Portals.</p>
+        </div>
+        
+        `, // html body
+    }, function (error, info) {
+        if (error) {
+            console.log("sending mail error", error);
+        } else {
+            console.log('Email sent: ' + info);
+        }
+    });
+
+
+
+
+}
 
 
 function verifyJWT(req, res, next) {
@@ -165,7 +226,7 @@ async function run() {
         // post bookings-------
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
-            // console.log(booking);
+            console.log(booking);
             const query = {
                 appointmentDate: booking.appointmentDate,
                 email: booking.email,
@@ -181,8 +242,13 @@ async function run() {
             }
 
             const result = await bookingsCollection.insertOne(booking);
+
+            // send email about appointments confirmation
+            sendBookingEmail(booking)
+
             res.send(result);
         });
+
 
         //create jwt---------
         app.get('/jwt', async (req, res) => {
@@ -201,7 +267,7 @@ async function run() {
         app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
             const price = booking.price;
-            const amount = price * 100;  // poysa the charge korbo
+            const amount = price * 100;  // poysa the change korbo
 
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
@@ -223,14 +289,14 @@ async function run() {
             const result = await paymentsCollection.insertOne(payment);
 
             const id = payment.bookingId;
-            const filter = {_id : ObjectId(id)}
+            const filter = { _id: ObjectId(id) }
             const updatedDoc = {
-                $set:{
+                $set: {
                     paid: true,
                     transactionId: payment.transactionId,
                 }
             }
-            const updatedResult = await bookingsCollection.updateOne(filter,updatedDoc)
+            const updatedResult = await bookingsCollection.updateOne(filter, updatedDoc)
             res.send(result)
         });
 
